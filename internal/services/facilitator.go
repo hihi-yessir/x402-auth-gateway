@@ -3,6 +3,8 @@ package service
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"os"
 )
@@ -17,11 +19,17 @@ func getFacilitatorURL() string {
 
 // 결제 검증 요청
 func ValidatePayment(paymentSignature []byte, paymentRequired []byte) (bool, error) {
+	var payloadObj interface{}
+	var requirementsObj interface{}
+	json.Unmarshal(paymentSignature, &payloadObj)
+	json.Unmarshal(paymentRequired, &requirementsObj)
+
 	reqBody := map[string]interface{}{
-		"paymentSignature": string(paymentSignature),
-		"paymentRequired":  string(paymentRequired),
+		"paymentPayload":      payloadObj,
+		"paymentRequirements": requirementsObj,
 	}
 	body, _ := json.Marshal(reqBody)
+	fmt.Printf("Facilitator 요청: %s\n", string(body))
 
 	resp, err := http.Post(
 		getFacilitatorURL()+"/verify",
@@ -32,14 +40,28 @@ func ValidatePayment(paymentSignature []byte, paymentRequired []byte) (bool, err
 		return false, err
 	}
 	defer resp.Body.Close()
+
+	respBody, _ := io.ReadAll(resp.Body)
+	fmt.Printf("Facilitator 응답 (%d): %s\n", resp.StatusCode, string(respBody))
+
 	return resp.StatusCode == 200, nil
 }
 
 // 정산
 func Settle(paymentSignature []byte, paymentRequired []byte) (string, error) {
+	var payloadObj interface{}
+	var requirementsObj interface{}
+
+	if err := json.Unmarshal(paymentSignature, &payloadObj); err != nil {
+		return "", fmt.Errorf("paymentPayload 파싱 실패: %v", err)
+	}
+	if err := json.Unmarshal(paymentRequired, &requirementsObj); err != nil {
+		return "", fmt.Errorf("paymentRequirements 파싱 실패: %v", err)
+	}
+
 	reqBody := map[string]interface{}{
-		"paymentSignature": paymentSignature,
-		"paymentRequired":  paymentRequired,
+		"paymentPayload":      payloadObj,
+		"paymentRequirements": requirementsObj,
 	}
 	body, _ := json.Marshal(reqBody)
 
@@ -62,9 +84,19 @@ func Settle(paymentSignature []byte, paymentRequired []byte) (string, error) {
 
 // 환불 (필요 시)
 func Refund(paymentSignature []byte, paymentRequired []byte) (string, error) {
+	var payloadObj interface{}
+	var requirementsObj interface{}
+
+	if err := json.Unmarshal(paymentSignature, &payloadObj); err != nil {
+		return "", fmt.Errorf("paymentPayload 파싱 실패: %v", err)
+	}
+	if err := json.Unmarshal(paymentRequired, &requirementsObj); err != nil {
+		return "", fmt.Errorf("paymentRequirements 파싱 실패: %v", err)
+	}
+
 	reqBody := map[string]interface{}{
-		"paymentSignature": paymentSignature,
-		"paymentREquired":  paymentRequired,
+		"paymentPayload":      payloadObj,
+		"paymentRequirements": requirementsObj,
 	}
 	body, _ := json.Marshal(reqBody)
 

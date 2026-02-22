@@ -1,2 +1,10 @@
 .env
 .DS_Store
+.idea/
+.vscode/
+
+# Go                                                                                         
+server 
+
+# Node.js                                                    
+test-agent/node_modules/   

@@ -28,5 +28,5 @@ func main() {
 	r.POST("/api/generate", handlers.Generate)
 	r.GET("/api/status/:agentId", handlers.Status)
 
-	r.Run(":8080")
+	r.Run(":8081")
 }

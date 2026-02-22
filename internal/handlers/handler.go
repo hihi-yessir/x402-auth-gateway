@@ -11,19 +11,21 @@ import (
 	service "github.com/hihi-yessir/auth-os-gateway/internal/services"
 )
 
-type PaymentRequirements struct {
-	X402Version int             `json:"x402Version"`
-	Accepts     []PaymentOption `json:"accepts"`
+type PaymentOption struct {
+	Scheme            string `json:"scheme"`
+	Network           string `json:"network"`
+	Asset             string `json:"asset"`
+	PayTo             string `json:"payTo"`
+	MaxAmountRequired string `json:"maxAmountRequired"`
+	MaxTimeoutSeconds int    `json:"maxTimeoutSeconds"`
+	Description       string `json:"description"`
+	Resource          string `json:"resource"`
+	Extra             Extra  `json:"extra"`
 }
 
-type PaymentOption struct {
-	Scheme         string `json:"scheme"`
-	Network        string `json:"network"`
-	Asset          string `json:"asset"`
-	PayTo          string `json:"payTo"`
-	AmountRequired string `json:"amountRequired"`
-	Description    string `json:"description"`
-	Resource       string `json:"resource"`
+type Extra struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
 }
 
 type PaymentPayload struct {
@@ -32,25 +34,25 @@ type PaymentPayload struct {
 }
 
 type PaymentDetails struct {
-	From  string `json:"from"`
-	To    string `json:"to"`
+	From  string `json:"from"` //agent wallet
+	To    string `json:"to"`   //우리 주소
 	Value string `json:"value"`
 	Nonce string `json:"nonce"`
 }
 
-func getPaymentRequirements() PaymentRequirements {
-	return PaymentRequirements{
-		X402Version: 1,
-		Accepts: []PaymentOption{
-			{
-				Scheme:         "exact",
-				Network:        os.Getenv("PAYMENT_NETWORK"),
-				Asset:          os.Getenv("PAYMENT_ASSET"),
-				PayTo:          os.Getenv("PAYMENT_PAY_TO"),
-				AmountRequired: os.Getenv("PAYMENT_AMOUNT"), // 0.5 USDC
-				Description:    "AI 에이전트 이미지 생성 비용",
-				Resource:       "/api/generate",
-			},
+func getPaymentRequirements() PaymentOption {
+	return PaymentOption{
+		Scheme:            "exact",
+		Network:           os.Getenv("PAYMENT_NETWORK"),
+		Asset:             os.Getenv("PAYMENT_ASSET"),
+		PayTo:             os.Getenv("PAYMENT_PAY_TO"),
+		MaxAmountRequired: os.Getenv("PAYMENT_AMOUNT"), // 0.5 USDC
+		MaxTimeoutSeconds: 3600,
+		Description:       "AI 에이전트 이미지 생성 비용",
+		Resource:          "/api/generate",
+		Extra: Extra{
+			Name:    "USD Coin",
+			Version: "2",
 		},
 	}
 }
@@ -59,8 +61,25 @@ func Generate(c *gin.Context) {
 	payment := c.GetHeader("X-PAYMENT")
 	// paymentSig 없으면 -> 402 반환
 	if payment == "" {
-		c.Header("PAYMENT-REQUIRED", "true")
-		c.JSON(402, getPaymentRequirements())
+		option := getPaymentRequirements()
+		requirements := map[string]interface{}{
+			"x402Version": 1,
+			"accepts":     []PaymentOption{option},
+		}
+		reqJSON, _ := json.Marshal(requirements)
+
+		// 헤더 이름을 X-Payment-Requirements로 변경 (표준 규격)
+		c.Header("X-Payment-Requirements", base64.StdEncoding.EncodeToString(reqJSON))
+
+		// 기존 X-PAYMENT 헤더도 유지 (하위 호환)
+		c.Header("X-PAYMENT", base64.StdEncoding.EncodeToString(reqJSON))
+
+		c.JSON(402, requirements)
+		return
+	}
+	agentId := c.GetHeader("X-AGENT-ID")
+	if agentId == "" {
+		c.JSON(400, gin.H{"error": "X-AGENT-ID 헤더 필요"})
 		return
 	}
 
@@ -70,6 +89,7 @@ func Generate(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "잘못된 X-PAYMENT 형식"})
 		return
 	}
+	fmt.Printf("클라이언트가 보낸 X-PAYMENT: %s\n", string(decoded))
 	var paymentData PaymentPayload
 	if err := json.Unmarshal(decoded, &paymentData); err != nil {
 		c.JSON(400, gin.H{"error": "X-PAYMENT 데이터 파싱 실패"})
@@ -88,22 +108,14 @@ func Generate(c *gin.Context) {
 	}
 
 	//hold 확인 후 결제 데이터 저장 (Settle 시 사용)
-	agentId := paymentData.Payload.From
 	service.PendingPayments.Store(agentId, service.PaymentContext{
 		Signature: decoded,
 		Required:  requiredBytes,
-		AgentID:   agentId,
 	})
 
-	/// JWT 생성 -> CRE 호출 (JWT 전달)
-	token, err := service.CreateJWT(agentId)
-	if err != nil {
-		c.JSON(500, gin.H{"error": "JWT 생성 실패"})
-		return
-	}
 	//CRE 호출
 	go func() {
-		err := service.CallCRE(token, agentId)
+		err := service.CallCRE(agentId)
 		if err != nil {
 			fmt.Printf("CRE 호출 실패: %v\n", err)
 		}
