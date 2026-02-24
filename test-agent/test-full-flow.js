@@ -68,16 +68,16 @@ async function main() {
     if (response.status === 202) {
       jobId = result.jobId;
       txHash = result.txHash;
-      console.log(`\n   ✅ 결제 성공!`);
+      console.log(`\n   결제 성공!`);
       console.log(`   Job ID: ${jobId}`);
       console.log(`   Tx Hash: ${txHash}`);
       console.log(`   BaseScan: https://sepolia.basescan.org/tx/${txHash}`);
     } else {
-      console.error(`   ❌ 실패 [${response.status}]:`, result);
+      console.error(`   실패 [${response.status}]:`, result);
       return;
     }
   } catch (error) {
-    console.error('   ❌ 결제 플로우 실패:', error.message);
+    console.error('   결제 플로우 실패:', error.message);
     return;
   }
 
@@ -100,19 +100,19 @@ async function main() {
 
         // 상태 표시 (queued, processing, completed, failed)
         const statusIcons = {
-          'queued': '⏳',
-          'processing': '🔄',
-          'completed': '✅',
-          'failed': '❌'
+          'queued': 'q',
+          'processing': 'p',
+          'completed': 'c',
+          'failed': 'f'
         };
-        const icon = statusIcons[data.status] || '❓';
+        const icon = statusIcons[data.status] || '?';
         console.log(`   ${icon} Status: ${data.status} (type: ${data.type})`);
 
         // 완료 시
         if (data.status === 'completed') {
           console.log('\n[4/4] 생성 완료!');
           if (data.artifact_url) {
-            console.log(`   📦 Artifact URL: ${data.artifact_url}`);
+            console.log(`   Artifact URL: ${data.artifact_url}`);
           }
           eventSource.close();
           resolve();
@@ -120,7 +120,7 @@ async function main() {
 
         // 실패 시
         if (data.status === 'failed') {
-          console.log(`\n   ❌ 생성 실패: ${data.error || 'Unknown error'}`);
+          console.log(`\n   생성 실패: ${data.error || 'Unknown error'}`);
           eventSource.close();
           reject(new Error(data.error));
         }
@@ -137,7 +137,7 @@ async function main() {
 
     // 타임아웃 (5분)
     setTimeout(() => {
-      console.log('\n   ⏰ 타임아웃 (5분)');
+      console.log('\n   타임아웃 (5분)');
       eventSource.close();
       resolve();
     }, 5 * 60 * 1000);
