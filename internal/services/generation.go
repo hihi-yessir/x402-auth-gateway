@@ -35,13 +35,6 @@ func getBaseURL() string {
 	return url
 }
 
-// GetBaseDomain - /v1 제거한 도메인 반환
-func GetBaseDomain() string {
-	baseURL := getBaseURL()
-	// "https://demo-api.whitewall.network/v1" → "https://demo-api.whitewall.network"
-	return baseURL[:len(baseURL)-3]
-}
-
 func GenerateContent(contentType string, prompt string) (*GenerationResponse, error) {
 	apiKey := os.Getenv("GENERATION_API_KEY")
 	baseURL := getBaseURL()
