@@ -27,6 +27,8 @@ func main() {
 	r := gin.Default()
 	r.POST("/api/generate", handlers.Generate)
 	r.GET("/api/status/:agentId", handlers.Status)
+	r.GET("/api/jobs/:jobId/stream", handlers.StreamJob)  // SSE 스트리밍
+	r.GET("/api/artifacts/:jobId", handlers.GetArtifact)  // 이미지/비디오 프록시
 
-	r.Run(":8080")
+	r.Run(":8081") //여기서 라우터 매칭 함수들 매 연결마다 go루틴됨!!!
 }
