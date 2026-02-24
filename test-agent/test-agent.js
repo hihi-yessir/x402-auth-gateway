@@ -10,7 +10,7 @@ const { baseSepolia } = require('viem/chains');
 const AGENT_PRIVATE_KEY = process.env.AGENT_PRIVATE_KEY;
 const GATEWAY_URL = process.env.GATEWAY_URL || 'http://localhost:8081';
 const AGENT_ID = process.env.AGENT_ID || '963';
-const RPC_URL = process.env.RPC_URL || 'https://sepolia.base.org';
+const RPC_URL = process.env.HTTP_RPC_URL || 'https://sepolia.base.org';
 
 async function main() {
   console.log('\n=== x402 Payment Test ===\n');
@@ -27,7 +27,7 @@ async function main() {
   });
 
   // 2. x402 클라이언트 설정
-  // 0x 접두어 체크 로직 추가 (예슬 님 아까 고생하셨던 부분! ㅋ)
+  // 0x 접두어 체크 로직 추가 
   const formattedPrivKey = AGENT_PRIVATE_KEY.startsWith('0x') 
     ? AGENT_PRIVATE_KEY 
     : `0x${AGENT_PRIVATE_KEY}`;
@@ -56,10 +56,13 @@ async function main() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-AGENT-ID': AGENT_ID
       },
       // 필요하다면 요청 바디도 추가 (지금은 빈 객체 예시)
-      body: JSON.stringify({ prompt: "Hello, WhiteWall!" })
+      body: JSON.stringify({                                                           
+              agentId: AGENT_ID,                                                           
+              type: 'image',                                                    
+              prompt: 'a cat in space'        
+          }) 
     });
 
     const result = await response.json();
