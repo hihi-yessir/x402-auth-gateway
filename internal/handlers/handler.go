@@ -159,7 +159,7 @@ func Generate(c *gin.Context) {
 			}
 			c.JSON(403, gin.H{"error": errMsg})
 		}
-	case <-time.After(60 * time.Second):
+	case <-time.After(90 * time.Second):
 		service.PendingPayments.Delete(agentId)
 		c.JSON(408, gin.H{"error": "Timeout waiting for blockchain event"})
 	}
