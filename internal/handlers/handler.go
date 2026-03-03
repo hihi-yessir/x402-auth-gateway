@@ -156,7 +156,7 @@ func Generate(c *gin.Context) {
 			c.JSON(403, gin.H{"error": errMsg})
 		}
 	case <-time.After(90 * time.Second):
-		service.PendingPayments.Delete(agentId)
+		// PendingPayments 삭제는 Worker가 담당 (여기서 삭제하면 Worker보다 먼저 삭제돼서 이벤트 놓침)
 		c.JSON(408, gin.H{"error": "Timeout waiting for blockchain event"})
 	}
 }
