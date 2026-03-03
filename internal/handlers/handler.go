@@ -134,14 +134,8 @@ func Generate(c *gin.Context) {
 		ResultCh:  resultCh,
 	})
 
-	//CRE 호출
-	go func() {
-		err := service.CallCRE(agentId)
-		if err != nil {
-			fmt.Printf("CRE 호출 실패: %v\n", err)
-			resultCh <- &service.EventResult{Granted: false, Error: err}
-		}
-	}()
+	//CRE 호출 (Worker Pool로 순차 처리)
+	service.SubmitCREJob(agentId, resultCh)
 	// 8. 이벤트 대기 (타임아웃 60초)
 	select {
 	case result := <-resultCh:

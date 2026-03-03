@@ -20,6 +20,9 @@ func main() {
 		log.Printf("경고: CRE 설정 실패 - %v\n", err)
 	}
 
+	// CRE Worker Pool 시작 (기본 1개, CRE_WORKER_COUNT로 조절)
+	service.InitCREWorkerPool()
+
 	// 블록체인 이벤트 리스너 시작
 	go blockchain.StartEventListener()
 
