@@ -19,6 +19,5 @@ type PaymentContext struct {
 	Required  []byte
 	Type      string // "image" or "video"
 	Prompt    string
-	ResultCh  chan *EventResult // handler에게 최종 결과 전달
-	EventCh   chan bool         // listener → worker: true=granted, false=denied
+	ResultCh  chan *EventResult // 결과 채널
 }
