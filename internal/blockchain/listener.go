@@ -17,6 +17,9 @@ import (
 	service "github.com/hihi-yessir/auth-os-gateway/internal/services"
 )
 
+// fmt 사용 확인용 (listener에서 직접 사용하지 않더라도 다른 함수에서 사용)
+var _ = fmt.Sprintf
+
 // 이벤트 시그니처 (keccak256 해시로)
 var (
 	accessGrantedSig = crypto.Keccak256Hash([]byte("AccessGranted(uint256,address,uint8)"))
@@ -104,7 +107,7 @@ func parseAgentId(topic common.Hash) string {
 	return topic.Big().String()
 }
 
-// AccessGranted 처리
+// AccessGranted 처리 - EventCh에 신호만 보냄 (실제 작업은 Worker가 처리)
 func onAccessGranted(agentId string) {
 	val, ok := service.PendingPayments.Load(agentId)
 	if !ok {
@@ -112,39 +115,10 @@ func onAccessGranted(agentId string) {
 		return
 	}
 	ctx := val.(service.PaymentContext)
-
-	// 1. Settle 호출
-	txHash, err := service.Settle(ctx.Signature, ctx.Required)
-	if err != nil {
-		log.Printf("Settle 실패: %v\n", err)
-	} else {
-		log.Printf("Settle 성공: txHash=%s\n", txHash)
-	}
-
-	// 2. AI 서비스 실행
-	log.Printf("AI 서비스 실행: agentId=%s\n", agentId)
-	log.Printf("Generation API 호출: type=%s, prompt=%s\n", ctx.Type, ctx.Prompt)
-	jobResp, err := service.GenerateContent(ctx.Type, ctx.Prompt)
-	if err != nil {
-		log.Printf("Generation API 실패: %v\n", err)
-		ctx.ResultCh <- &service.EventResult{Granted: false, Error: err}
-		service.PendingPayments.Delete(agentId)
-		return
-	}
-	log.Printf("생성 요청 성공: jobId=%s\n", jobResp.JobID)
-
-	// 3. 결과 채널에 전달
-	ctx.ResultCh <- &service.EventResult{
-		Granted: true,
-		TxHash:  txHash,
-		JobID:   jobResp.JobID,
-	}
-
-	// 4. PendingPayments에서 삭제 정리
-	service.PendingPayments.Delete(agentId)
+	ctx.EventCh <- true // Worker에게 "승인됨" 신호
 }
 
-// AccessDenied 처리
+// AccessDenied 처리 - EventCh에 신호만 보냄
 func onAccessDenied(agentId string) {
 	val, ok := service.PendingPayments.Load(agentId)
 	if !ok {
@@ -152,23 +126,5 @@ func onAccessDenied(agentId string) {
 		return
 	}
 	ctx := val.(service.PaymentContext)
-
-	// 1. Refund 호출
-	txHash, err := service.Refund(ctx.Signature, ctx.Required)
-	if err != nil {
-		log.Printf("Refund 실패: %v\n", err)
-	} else {
-		log.Printf("Refund 성공: txHash=%s\n", txHash)
-	}
-
-	log.Printf("AccessDenied: agentId=%s\n", agentId)
-
-	// 2. 결과 채널에 전달
-	ctx.ResultCh <- &service.EventResult{
-		Granted: false,
-		Error:   fmt.Errorf("access denied by blockchain"),
-	}
-
-	// 3. 정리
-	service.PendingPayments.Delete(agentId)
+	ctx.EventCh <- false // Worker에게 "거부됨" 신호
 }

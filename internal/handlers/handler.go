@@ -125,6 +125,7 @@ func Generate(c *gin.Context) {
 
 	// 5. 결과 채널 생성
 	resultCh := make(chan *service.EventResult, 1)
+	eventCh := make(chan bool, 1)
 	// 6. hold 확인 후 PendingPayments에 저장 (채널 + type + prompt 포함!)
 	service.PendingPayments.Store(agentId, service.PaymentContext{
 		Signature: decoded,
@@ -132,9 +133,10 @@ func Generate(c *gin.Context) {
 		Type:      req.Type,
 		Prompt:    req.Prompt,
 		ResultCh:  resultCh,
+		EventCh:   eventCh,
 	})
 
-	//CRE 호출 (Worker Pool로 순차 처리)
+	// Worker가 CRE 호출 + 이벤트 대기 + Settle + 이미지생성 전부 순차 처리
 	service.SubmitCREJob(agentId, resultCh)
 	// 8. 이벤트 대기 (타임아웃 60초)
 	select {
