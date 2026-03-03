@@ -1,4 +1,4 @@
-// Access Grated evnet감지 -> Settle 호출
+// Access Granted event 감지 -> Settle 호출
 package blockchain
 
 import (
@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -22,7 +23,7 @@ var (
 	accessDeniedSig  = crypto.Keccak256Hash([]byte("AccessDenied(uint256,bytes32)"))
 )
 
-// 이벤트 리스너 시작
+// 이벤트 리스너 시작 (자동 재연결 포함)
 func StartEventListener() {
 	rpcURL := os.Getenv("RPC_URL") //wss
 	AuthOSConsumer := os.Getenv("AUTHOSCONSUMER_CONTRACT_ADDRESS")
@@ -32,61 +33,69 @@ func StartEventListener() {
 		return
 	}
 
-	client, err := ethclient.Dial(rpcURL)
-	if err != nil {
-		log.Printf("이더리움 클라이언트 연결 실패: %v\n", err)
-		return
-	}
-
 	contractAddr := common.HexToAddress(AuthOSConsumer)
 
-	// 필터 쿼리 설정
+	// 재연결 루프
+	for {
+		log.Println("블록체인 WebSocket 연결 시도...")
+
+		err := listenEvents(rpcURL, contractAddr)
+		if err != nil {
+			log.Printf("이벤트 리스너 종료: %v\n", err)
+		}
+
+		// 5초 후 재연결
+		log.Println("5초 후 재연결 시도...")
+		time.Sleep(5 * time.Second)
+	}
+}
+
+// 실제 이벤트 구독 & 수신 (연결 끊기면 에러 반환)
+func listenEvents(rpcURL string, contractAddr common.Address) error {
+	client, err := ethclient.Dial(rpcURL)
+	if err != nil {
+		return fmt.Errorf("이더리움 클라이언트 연결 실패: %v", err)
+	}
+	defer client.Close()
+
 	query := ethereum.FilterQuery{
 		Addresses: []common.Address{contractAddr},
 	}
 
-	// 이벤트 구독
 	logs := make(chan types.Log)
 	sub, err := client.SubscribeFilterLogs(context.Background(), query, logs)
 	if err != nil {
-		log.Printf("이벤트 구독 실패: %v\n", err)
-		return
+		return fmt.Errorf("이벤트 구독 실패: %v", err)
 	}
 
-	log.Println("AuthOSConsumer 컨트랙트 이벤트 리스너 시작됨")
+	log.Println("AuthOSConsumer 이벤트 리스너 연결 성공!")
 
-	// 이벤트 처리 (고루틴)
-	go func() {
-		for {
-			select {
-			case err := <-sub.Err():
-				log.Printf("구독 에러: %v\n", err)
-				return
+	// 이벤트 수신 루프
+	for {
+		select {
+		case err := <-sub.Err():
+			return fmt.Errorf("구독 에러 (재연결 예정): %v", err)
 
-			case vLog := <-logs:
-				handleEvent(vLog)
-			}
+		case vLog := <-logs:
+			handleEvent(vLog)
 		}
-	}()
+	}
 }
 
 // 이벤트 처리
 func handleEvent(vLog types.Log) {
-	// 이벤트 토픽으로 이벤트 타입 구분
 	eventSig := vLog.Topics[0]
 
-	// AccessGranted 이벤트
-	if eventSig == accessGrantedSig { // 직접 비교!
+	if eventSig == accessGrantedSig {
 		agentId := parseAgentId(vLog.Topics[1])
 		log.Printf("Event 수신 ! AccessGranted: agentId=%s\n", agentId)
-		onAccessGranted(agentId) //!!! 소문자로 바꿔라
+		onAccessGranted(agentId)
 	}
 
-	// AccessDenied 이벤트
 	if eventSig == accessDeniedSig {
 		agentId := parseAgentId(vLog.Topics[1])
 		log.Printf("Event 수신! AccessDenied: agentId=%s\n", agentId)
-		onAccessDenied(agentId) //!!! 소문자로 바꿔라
+		onAccessDenied(agentId)
 	}
 }
 
@@ -97,7 +106,6 @@ func parseAgentId(topic common.Hash) string {
 
 // AccessGranted 처리
 func onAccessGranted(agentId string) {
-	// 1. PendingPayments에서 결제 데이터 조회
 	val, ok := service.PendingPayments.Load(agentId)
 	if !ok {
 		log.Printf("결제 데이터 없음: agentId=%s\n", agentId)
@@ -109,12 +117,11 @@ func onAccessGranted(agentId string) {
 	txHash, err := service.Settle(ctx.Signature, ctx.Required)
 	if err != nil {
 		log.Printf("Settle 실패: %v\n", err)
-		// Settle 실패해도 AI 서비스는 실행 (이미 검증됨)
 	} else {
 		log.Printf("Settle 성공: txHash=%s\n", txHash)
 	}
 
-	// 2. AI 서비스 실행 (TODO)
+	// 2. AI 서비스 실행
 	log.Printf("AI 서비스 실행: agentId=%s\n", agentId)
 	log.Printf("Generation API 호출: type=%s, prompt=%s\n", ctx.Type, ctx.Prompt)
 	jobResp, err := service.GenerateContent(ctx.Type, ctx.Prompt)
