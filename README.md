@@ -1,5 +1,8 @@
 <div align="center">
 
+<img src="assets/banner.svg" alt="x402-auth-gateway" width="100%" />
+
+
 # x402-auth-gateway
 
 **Pay first, verify on-chain, then access.**
