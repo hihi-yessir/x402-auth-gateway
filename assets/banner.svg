@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0A0A0A"/>
+      <stop offset="50%" stop-color="#1A0F0A"/>
+      <stop offset="100%" stop-color="#0A0A0A"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="400" fill="url(#bg)"/>
+
+  <!-- 3-step state machine visualization (right side) -->
+  <!-- Step 1: 402 -->
+  <g transform="translate(650, 100)">
+    <rect x="-80" y="-35" width="160" height="70" rx="8" fill="#141414" stroke="#FF9F1C" stroke-width="1.5"/>
+    <text x="0" y="-8" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="900" fill="#FF9F1C" text-anchor="middle">402</text>
+    <text x="0" y="14" font-family="Inter, system-ui, sans-serif" font-size="9" font-weight="600" fill="#666666" text-anchor="middle" letter-spacing="1">PAYMENT REQUIRED</text>
+  </g>
+
+  <!-- Arrow 1→2 -->
+  <line x1="730" y1="100" x2="810" y2="100" stroke="#FF9F1C" stroke-width="1" opacity="0.3"/>
+  <text x="770" y="88" font-family="Inter, system-ui, sans-serif" font-size="8" font-weight="600" fill="#FF9F1C" text-anchor="middle" opacity="0.5">EIP-3009</text>
+
+  <!-- Step 2: Hold + CRE -->
+  <g transform="translate(900, 100)">
+    <rect x="-80" y="-35" width="160" height="70" rx="8" fill="#141414" stroke="#375BD2" stroke-width="1.5"/>
+    <text x="0" y="-8" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="800" fill="#375BD2" text-anchor="middle" letter-spacing="1">HOLD + CRE</text>
+    <text x="0" y="14" font-family="Inter, system-ui, sans-serif" font-size="9" font-weight="600" fill="#666666" text-anchor="middle" letter-spacing="1">VERIFY ON-CHAIN</text>
+  </g>
+
+  <!-- Arrow 2→3a (success) -->
+  <line x1="980" y1="100" x2="1050" y2="100" stroke="#375BD2" stroke-width="1" opacity="0.3"/>
+  <line x1="1050" y1="100" x2="1050" y2="220" stroke="#375BD2" stroke-width="1" opacity="0.2"/>
+  <line x1="1050" y1="100" x2="1050" y2="320" stroke="#D94040" stroke-width="1" opacity="0.2"/>
+
+  <!-- Step 3a: Settle (success) -->
+  <g transform="translate(1050, 220)">
+    <rect x="-65" y="-25" width="130" height="50" rx="8" fill="#141414" stroke="#2EAD6B" stroke-width="1.5"/>
+    <text x="0" y="-2" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="800" fill="#2EAD6B" text-anchor="middle" letter-spacing="1">SETTLE</text>
+    <text x="0" y="14" font-family="Inter, system-ui, sans-serif" font-size="9" font-weight="600" fill="#666666" text-anchor="middle">200 + resource</text>
+  </g>
+
+  <!-- Step 3b: Refund (failure) -->
+  <g transform="translate(1050, 320)">
+    <rect x="-65" y="-25" width="130" height="50" rx="8" fill="#141414" stroke="#D94040" stroke-width="1.5"/>
+    <text x="0" y="-2" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="800" fill="#D94040" text-anchor="middle" letter-spacing="1">REFUND</text>
+    <text x="0" y="14" font-family="Inter, system-ui, sans-serif" font-size="9" font-weight="600" fill="#666666" text-anchor="middle">403 + error</text>
+  </g>
+
+  <!-- ACE label -->
+  <text x="1050" y="168" font-family="Inter, system-ui, sans-serif" font-size="8" font-weight="700" fill="#375BD2" text-anchor="middle" letter-spacing="1" opacity="0.5">ACE RESULT</text>
+  <text x="1010" y="218" font-family="Inter, system-ui, sans-serif" font-size="8" font-weight="600" fill="#2EAD6B" text-anchor="end" opacity="0.5">granted</text>
+  <text x="1010" y="318" font-family="Inter, system-ui, sans-serif" font-size="8" font-weight="600" fill="#D94040" text-anchor="end" opacity="0.5">denied</text>
+
+  <!-- Logo + Title (left side) -->
+  <rect x="80" y="138" width="5" height="28" rx="1" fill="#EEEEEE" opacity="0.3"/>
+  <rect x="90" y="138" width="5" height="28" rx="1" fill="#EEEEEE" opacity="0.6"/>
+  <rect x="100" y="138" width="5" height="28" rx="1" fill="#EEEEEE" opacity="0.9"/>
+  <text x="118" y="162" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="900" letter-spacing="2" fill="#EEEEEE">X402-AUTH</text>
+  <text x="118" y="190" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="900" letter-spacing="2" fill="#EEEEEE">GATEWAY</text>
+
+  <text x="82" y="230" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="400" fill="#EEEEEE" opacity="0.5">Pay first, verify on-chain, then access</text>
+
+  <text x="82" y="280" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="400" fill="#666666">x402 payment-gated proxy</text>
+  <text x="82" y="298" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="400" fill="#666666">for Whitewall OS</text>
+</svg>
