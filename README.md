@@ -11,7 +11,7 @@
 [![x402](https://img.shields.io/badge/x402-EIP--3009-FF9F1C?style=for-the-badge)](https://www.x402.org)
 [![Chainlink CRE](https://img.shields.io/badge/Chainlink-CRE-375BD2?style=for-the-badge&logo=chainlink)](https://docs.chain.link/cre)
 
-> Part of [**Whitewall OS**](https://github.com/hihi-yessir/Verified-Agent-Hub) — on-chain identity and access control for AI agents.
+> Part of [**Whitewall OS**](https://github.com/hihi-yessir/whitewall-os) — on-chain identity and access control for AI agents.
 
 </div>
 
