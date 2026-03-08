@@ -173,6 +173,6 @@ AI_API_URL=...                   # Downstream AI generation API
 
 | Repository | Role |
 |:-----------|:-----|
-| [**Verified-Agent-Hub**](https://github.com/hihi-yessir/Verified-Agent-Hub) | Smart contracts, ACE policies, validators, SDK |
+| [**whitewall-os**](https://github.com/hihi-yessir/whitewall-os) | Smart contracts, ACE policies, validators, SDK |
 | [**whitewall-cre**](https://github.com/hihi-yessir/whitewall-cre) | CRE workflows (triggered by this gateway) |
 | [**whitewall**](https://github.com/hihi-yessir/whitewall) | Demo frontend |
